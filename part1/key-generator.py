@@ -1,7 +1,13 @@
 from Crypto.PublicKey import RSA
 
 newPrivateKey = RSA.generate(1024)
-newPublickKey = newPrivateKey.publickey()
+newPublickKey = newPrivateKey.publickey().exportKey('PEM')
+newPrivateKey = newPrivateKey.exportKey('PEM')
 
-newPrivateKey.exportKey()
-newPublickKey.exportKey()
+f = open('publicKey','w')
+f.write(newPublickKey)
+f.close()
+
+f = open('privateKey','w')
+f.write(newPrivateKey)
+f.close()
