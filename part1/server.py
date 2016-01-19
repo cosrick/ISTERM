@@ -8,7 +8,7 @@ def md5hash(str):
     return m.digest()
 
 def produceMessage(header, row):
-    package = serverPublicKey.encrypt(row,32)[0]
+    package = clientPublicKey.encrypt(row,32)[0]
     while len(header) < 1024:
         header += "\000"
     return header + package + md5hash(header + package)
@@ -33,7 +33,7 @@ privateKey = open('server_privateKey','r').read()
 myPrivateKey = RSA.importKey(privateKey)
 
 publicKey = open('client_publicKey','r').read()
-clentPublicKey = RSA.importKey(publicKey)
+clientPublicKey = RSA.importKey(publicKey)
 Auths = ["IamAuth", "IamAuth1", "IamAuth2"]
 
 
@@ -63,13 +63,11 @@ while True:
         if checkHash(msg):
             clientAuth = getPackage(msg)
             if clientAuth in Auths:
-                print patchMsg
                 sendMsg = produceMessage('', patchMsg)
-                print sendMsg
                 csock.send(sendMsg)
                 csock.close()
             else:
-                "Auth Fail"
+                print "Auth Fail"
         else:
             print "Hash Fail"
 
