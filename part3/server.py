@@ -38,7 +38,6 @@ def produceAuthoirtyMessage(row, randomN):
 
     row = row + '||' + randomN
     package = clientPublicKey.encrypt(row,32)[0]
-    print "Authority length: ", len(package)
 
     return package
 
@@ -73,7 +72,6 @@ def checkKDCAuthority(message, randomT):
     for i in range(512):
         if message[i] != '\000':
             signaturePart += message[i]
-
     h = MD5.new()
     h.update(encryptPackage)
     if not signer.verify(h, signaturePart):
@@ -130,7 +128,6 @@ while True:
 
     if patchMsg != '':
         #Communicate to KDC
-        print "Now Key is: ", clientKey
         if clientKey == "":
             Ksock = socket.socket()
             try:
@@ -138,33 +135,23 @@ while True:
             except socket.error, msg:
                 sys.stderr.write("[ERROR] %s\n" % msg[1])
                 exit(1)
-            print Ksock.recv(1024)
+            print Ksock.recv(2048)
             request = "client"
             randomT1 = randomGenerator()
             reqMessage = request + '||' + randomT1
             Ksock.send(reqMessage)
             resMessage = Ksock.recv(4096)
+            Ksock.close()
 
             if checkKDCAuthority(resMessage, randomT1):
                 print "Success"
-                clientKey = getKeyInfo(resMessage)
-                print clientKey
-                randomNum = randomNGenerator()
-                csock.send(produceAuthoirtyMessage("127.0.0.1", randomNum))
             else:
                 print "Fail"
-
-
-
-
-
-
-
-
-
-
-
-
+            clientKey = getKeyInfo(resMessage)
+            randomNum = randomNGenerator()
+            csock.send(produceAuthoirtyMessage(adr[0], randomNum))
+            confirm = csock.recv(1024)
+            csock.send(myPrivateKey.decrypt(confirm))
         #Send Notification
         csock.send("NewPatchDeployed")
         #Get Response
@@ -174,7 +161,6 @@ while True:
             if checkSignature(msg):
                 clientAuth = getPackage(msg)
                 if clientAuth in Auths:
-                    print patchMsg
                     sendMsg = produceMessage('', patchMsg)
                     csock.send(sendMsg)
                     csock.close()

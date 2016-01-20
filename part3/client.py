@@ -113,31 +113,35 @@ serverMsg = sock.recv(1024)
 print serverMsg
 
 #sever snd IP || randomNumber
-serverMsg = sock.recv(1024)
-print myPrivateKey.decrypt(serverMsg)
-print serverMsg
+serverMsg = sock.recv(2048)
+if serverMsg != "No New Patch" and serverMsg != "NewPatchDeployed":
 
-Ksock = socket.socket()
-try:
-    Ksock.connect(('', 25618))
-except socket.error, msg:
-    sys.stderr.write("[ERROR] %s\n" % msg[1])
-    exit(1)
-print Ksock.recv(1024)
-request = "server"
-randomT1 = randomGenerator()
-reqMessage = request + '||' + randomT1
-Ksock.send(reqMessage)
-resMessage = Ksock.recv(4096)
-if checkKDCAuthority(resMessage, randomT1):
-    print "Success"
-    serverKey = getKeyInfo(resMessage)
-    print serverKey
-else:
-    print "Fail"
+	Ksock = socket.socket()
+	try:
+	    Ksock.connect(('', 25618))
+	except socket.error, msg:
+	    sys.stderr.write("[ERROR] %s\n" % msg[1])
+	    exit(1)
+	print Ksock.recv(2048)
+	request = "server"
+	randomT1 = randomGenerator()
+	reqMessage = request + '||' + randomT1
+	Ksock.send(reqMessage)
+	resMessage = Ksock.recv(4096)
+	if checkKDCAuthority(resMessage, randomT1):
+	    serverKey = getKeyInfo(resMessage)
+	    serverPublicKey = RSA.importKey(serverKey)
+	    randomT = randomGenerator()
+	    sock.send(serverPublicKey.encrypt(randomT,32)[0])
+	    if sock.recv(1024) == randomT:
+	    	print "It is current Server"
+	else:
+	    print "Authority Fail"
+	serverMsg = sock.recv(4096)
 
 if serverMsg == "NewPatchDeployed":
 	#Send Auth
+	print serverMsg
 	
 	sendMsg = produceMessage('', Auth)
 	sock.send(sendMsg)
@@ -153,6 +157,7 @@ if serverMsg == "NewPatchDeployed":
 			print "Signature Fail"
 	else:
 		print "Hash Fail"
+	sock.close()
 elif serverMsg == "No New Patch":
 	print serverMsg
-sock.close()
+	sock.close()
